@@ -54,14 +54,14 @@ function EnterSearch(data){
     function cropSearch(){
       let carData = [];
       let text = '';
-      carData = data.filter(item=>item.CarParkName.Zh_tw === crop.value.trim());
+      carData = data.filter(item => item.CarParkName.Zh_tw === crop.value.trim());
       carData.forEach(item => text += `<div class="sort-title">${item.CarParkName.Zh_tw}</div>
       <div class="sort-info"><i class="bi bi-p-circle" style="margin-right: 5px;"></i>${item.Description}</div>
       <div class="sort-info"><i class="bi bi-credit-card" style="margin-right: 5px;"></i>${item.FareDescription}</div>`);
       car.innerHTML = text;
       crop.value = '';
     }
-    if(e.target.nodeName==="BUTTON"){ crop.value.trim() === "" ? alert('請輸入完整停車場名稱')  : cropSearch()}
+    if(e.target.nodeName==="BUTTON"){ crop.value.trim() === "" || crop.value.trim() !== data ? alert('請輸入正確停車場名稱')  : cropSearch()}
     
   })
 }
