@@ -39,15 +39,30 @@
 
 
 <script>
- const url = `https://tdx.transportdata.tw/api/basic/v1/Parking/OffStreet/CarPark/City/Taipei?%24top=3000&%24count=true&%24format=JSON`
-//  const parkUrl = `https://tdx.transportdata.tw/api/basic/v1/Parking/OffStreet/ParkingSpotAvailability/City/Keelung?%24top=120&%24format=JSON`//動態停車格
- const choose = document.querySelector('.choose')
- const car = document.querySelector('#sort-list')
- const crop = document.querySelector('#crop')
- const btn = document.querySelector('.search2')
- const box = document.querySelector('.box')
+ const url = `https://tdx.transportdata.tw/api/basic/v1/Parking/OffStreet/CarPark/City/Taipei?%24top=3000&%24count=true&%24format=JSON`;
+
+ const choose = document.querySelector('.choose');
+ const car = document.querySelector('#sort-list');
+ const crop = document.querySelector('#crop');
+ const btn = document.querySelector('.search2');
+ const box = document.querySelector('.box');
  let data = [];//取出來的預設資料
-//  let CarParkPosition = [];//停車場經緯度
+ const map = L.map("myMap", {
+          center: [25.04776, 121.53185],// 設定地圖中心點與放大級別
+          zoom: 17
+        });
+// 抓取資料
+function getData(){
+ axios.get(url)
+   .then(res => {
+      data = res.data.CarParks;
+console.log(data)
+       search(data)
+       EnterSearch(data)
+       myMap(data)
+   })
+   .catch(error=>console.log(error))
+}
  
 function EnterSearch(data){
   box.addEventListener('click',(e)=>{
@@ -55,13 +70,26 @@ function EnterSearch(data){
       let carData = [];
       let text = '';
       carData = data.filter(item => item.CarParkName.Zh_tw === crop.value.trim());
-      carData.forEach(item => text += `<div class="sort-title">${item.CarParkName.Zh_tw}</div>
+      carData.forEach(item => text += `<div class="sort-title"><a href="#">${item.CarParkName.Zh_tw}</a></div>
       <div class="sort-info"><i class="bi bi-p-circle" style="margin-right: 5px;"></i>${item.Description}</div>
       <div class="sort-info"><i class="bi bi-credit-card" style="margin-right: 5px;"></i>${item.FareDescription}</div>`);
       car.innerHTML = text;
       crop.value = '';
+                  // 為每個停車場名稱元素添加點擊事件
+                document.querySelectorAll('.sort-title a').forEach((element ,index) => {
+                  let title = data[index].CarParkName.Zh_tw;
+                  let content = data[index].FareDescription;
+                  element.addEventListener('click', () => {
+                  const lat = data[index].CarParkPosition.PositionLat;
+                  const lon = data[index].CarParkPosition.PositionLon;
+
+                    map.panTo([lat, lon]); // 移動地圖中心到該位置
+                    map.openPopup(`<h2 style="font-size: 18px; font-weight:700; text-align:center;">${title}</h2>
+                                  <br/><p style="margin: 0;">${content}</p>`, [lat, lon]);
+                  });
+            });
     }
-    if(e.target.nodeName==="BUTTON"){ crop.value.trim() === "" || crop.value.trim() !== data ? alert('請輸入正確停車場名稱')  : cropSearch()}
+    if(e.target.nodeName==="BUTTON"){ crop.value.trim() === "" || crop.value.trim() === data ? alert('請輸入正確停車場名稱')  : cropSearch()}
     
   })
 }
@@ -74,39 +102,38 @@ function EnterSearch(data){
                  item.target.value === '地下停車場' ? data.filter(index => index.CarParkName.Zh_tw.includes('地下停車場')) :
                  item.target.value === '立體停車場' ? data.filter(index => index.CarParkName.Zh_tw.includes('立體停車場')) :
                  [];
-  // item.target.value === '地下停車場' ?
-  //  filterData = data.filter(index => index.CarParkName.Zh_tw .includes('地下停車場')):
-  //  filterData = data.filter(index => index.CarParkName.Zh_tw .includes('立體停車場'));
 
-      filterData.forEach(item => str += `
-      <div class="sort-title">${item.CarParkName.Zh_tw}</div>
+      filterData.forEach(item => { str += `
+      <div class="sort-title"><a href="#" data-lat="${item.CarParkPosition.PositionLat}" data-lon="${item.CarParkPosition.PositionLon}" data-title="${item.CarParkName.Zh_tw}"
+       data-content="${item.FareDescription}">
+       ${item.CarParkName.Zh_tw}</a></div>
       <div class="sort-info"><i class="bi bi-p-circle" style="margin-right: 5px;"></i>${item.Description}</div>
-      <div class="sort-info"><i class="bi bi-credit-card" style="margin-right: 5px;"></i>${item.FareDescription}</div>` );
-      car.innerHTML = str
-  })
- }
-// 抓取資料
- function getData(){
- axios.get(url)
-   .then(res => {
-      data = res.data.CarParks;
-      // data.map(item =>{
-      // return CarParkPosition.push(item.CarParkPosition)
-      // })//取出經緯度
+      <div class="sort-info"><i class="bi bi-credit-card" style="margin-right: 5px;"></i>${item.FareDescription}</div>` 
+    });
+      car.innerHTML = str;
 
-       search(data)
-       EnterSearch(data)
-       myMap(data)
-   })
-   .catch(error=>console.log(error))
-}
+
+        document.querySelectorAll('.sort-title a').forEach((element) => {
+          
+          element.addEventListener('click', (event) => {
+            if(event.target.tagName === 'A') {
+              let title = event.target.dataset.title;
+              let content = event.target.dataset.content;
+            const lat = parseFloat(event.target.dataset.lat);
+            const lon = parseFloat(event.target.dataset.lon);
+              map.panTo([lat, lon]);// 移動地圖中心到該位置
+              map.openPopup(`<h2 style="font-size: 18px; font-weight:700; text-align:center;">${title}</h2>
+              <br/><p style="margin: 0;">${content}</p>`, [lat, lon])
+            }
+          });
+      });
+  });
+ }
+
 
 // 地圖的生成
 function myMap(showData){
-        const map = L.map("myMap", {
-          center: [25.04776, 121.53185],// 設定地圖中心點與放大級別
-          zoom: 17
-        });
+
         // 載入圖資
         L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
           attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>contributors'
@@ -121,13 +148,16 @@ function myMap(showData){
         let markers = L.markerClusterGroup().addTo(map);//創建座標群
 
         showData.forEach(item => {
-          let iicon
-          item.CarParkName.Zh_tw .includes('地下停車場')? iicon = redIcon :iicon = blueIcon ;
-          // if(item.CarParkName.Zh_tw .includes('地下停車場')){}else{ }
+          let icon
+          item.CarParkName.Zh_tw .includes('地下停車場')? icon = redIcon :icon = blueIcon ;
+        
         const lat = parseFloat(item.CarParkPosition.PositionLat); // 將字串轉換為浮點數
         const lon = parseFloat(item.CarParkPosition.PositionLon); // 將字串轉換為浮點數
-        let marker = L.marker([lat,lon],{icon:iicon}); // 底層 Marker
-        marker.bindPopup(`<p style="font-size: 18px;font-weight: 700;">${item.CarParkName.Zh_tw}</p>`);
+        let marker = L.marker([lat,lon],{icon:icon}); // 底層 Marker
+        let title = item.CarParkName.Zh_tw;
+        let content = item.FareDescription
+        marker.bindPopup(`<h2 style="font-size: 18px; font-weight:700; text-align:center;">${title}</h2>
+        <br/><p style="margin: 0;">${content}</p>`);
    // 資訊視窗
         markers.openPopup();
         markers.addLayer(marker); // 把 marker 加入 L.markerClusterGroup
