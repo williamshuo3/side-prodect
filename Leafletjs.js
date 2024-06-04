@@ -21,6 +21,19 @@ Promise.all([Taipei,Yilan])
        myMap(data)
   }
 ))
+function togo(element){
+  element.addEventListener('click', (event) => {
+    if(event.target.tagName === 'A') {
+      let title = event.target.dataset.title;
+      let content = event.target.dataset.content;
+    const lat = parseFloat(event.target.dataset.lat);
+    const lon = parseFloat(event.target.dataset.lon);
+      map.panTo([lat, lon]);// 移動地圖中心到該位置
+      map.openPopup(`<h2 style="font-size: 18px; font-weight:700; text-align:center;">${title}</h2>
+      <br/><p style="margin: 0;">${content}</p>`, [lat, lon])
+    }
+  });
+  }
 // 抓取資料
 // function getData(){
 //  axios.get(CarPark)
@@ -48,12 +61,11 @@ function EnterSearch(data){
       crop.value = '';
                   // 為每個停車場名稱元素添加點擊事件
                 document.querySelectorAll('.sort-title a').forEach((element ,index) => {
-                  let title = data[index].CarParkName.Zh_tw;
-                  let content = data[index].FareDescription;
+                  let title = carData[index].CarParkName.Zh_tw;
+                  let content = carData[index].FareDescription;
+                  let lat = carData[index].CarParkPosition.PositionLat;
+                  let lon = carData[index].CarParkPosition.PositionLon;
                   element.addEventListener('click', () => {
-                  const lat = data[index].CarParkPosition.PositionLat;
-                  const lon = data[index].CarParkPosition.PositionLon;
-
                     map.panTo([lat, lon]); // 移動地圖中心到該位置
                     map.openPopup(`<h2 style="font-size: 18px; font-weight:700; text-align:center;">${title}</h2>
                                   <br/><p style="margin: 0;">${content}</p>`, [lat, lon]);
@@ -85,21 +97,8 @@ function EnterSearch(data){
       `<div class="sort-info">尚在調查</div>`}` 
     });
       car.innerHTML = str;
-
-
-        document.querySelectorAll('.sort-title a').forEach((element) => {
-          
-          element.addEventListener('click', (event) => {
-            if(event.target.tagName === 'A') {
-              let title = event.target.dataset.title;
-              let content = event.target.dataset.content;
-            const lat = parseFloat(event.target.dataset.lat);
-            const lon = parseFloat(event.target.dataset.lon);
-              map.panTo([lat, lon]);// 移動地圖中心到該位置
-              map.openPopup(`<h2 style="font-size: 18px; font-weight:700; text-align:center;">${title}</h2>
-              <br/><p style="margin: 0;">${content}</p>`, [lat, lon])
-            }
-          });
+      document.querySelectorAll('.sort-title a').forEach((element) => {
+        togo(element)
       });
   });
  }
